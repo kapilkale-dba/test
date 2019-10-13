@@ -1,0 +1,160 @@
+CREATE TABLE DEPT
+ (DEPTNO NUMBER(2) ,
+	DNAME VARCHAR2(14) ,
+	LOC VARCHAR2(13) ) ;
+
+INSERT INTO DEPT VALUES
+	(10,'ACCOUNTING','NEW YORK');
+
+INSERT INTO DEPT VALUES (20,'RESEARCH','DALLAS');
+
+INSERT INTO DEPT VALUES
+	(30,'SALES','CHICAGO');
+
+INSERT INTO DEPT VALUES
+	(40,'OPERATIONS','BOSTON');
+
+COMMIT;
+
+CREATE TABLE EMP
+       
+(EMPNO NUMBER(4) ,ENAME VARCHAR2(10),
+JOB VARCHAR2(9),
+MGR NUMBER(4),
+HIREDATE DATE,
+SAL NUMBER(7,2),
+COMM NUMBER(7,2),
+DEPTNO NUMBER(2) );
+
+INSERT INTO EMP VALUES
+(7369,'SMITH','CLERK',7902,'17-dec-1980',800,NULL,20);
+
+INSERT INTO EMP VALUES
+(7499,'ALLEN','SALESMAN',7698,'20-feb-1981',1600,300,30);
+
+INSERT INTO EMP VALUES
+(7521,'WARD','SALESMAN',7698,'22-feb-1981',1250,500,30);
+
+INSERT INTO EMP VALUES
+(7566,'JONES','MANAGER',7839,'2-apr-1981',2975,NULL,20);
+
+INSERT INTO EMP VALUES
+(7654,'MARTIN','SALESMAN',7698,'28-sep-1981',1250,1400,30);
+
+INSERT INTO EMP VALUES
+(7698,'BLAKE','MANAGER',7839,'1-may-1981',2850,NULL,30);
+
+INSERT INTO EMP VALUES
+(7782,'CLARK','MANAGER',7839,'9-jun-1981',2450,NULL,10);
+
+INSERT INTO EMP VALUES
+(7788,'SCOTT','ANALYST',7566,'13-JUL-87',3000,NULL,20);
+
+INSERT INTO EMP VALUES
+(7839,'KING','PRESIDENT',NULL,'17-nov-1981',5000,NULL,10);
+
+INSERT INTO EMP VALUES
+(7844,'TURNER','SALESMAN',7698,'8-sep-1981',1500,0,30);
+
+INSERT INTO EMP VALUES
+(7876,'ADAMS','CLERK',7788,'13-JUL-87',1100,NULL,20);
+
+INSERT INTO EMP VALUES
+(7900,'JAMES','CLERK',7698,'3-dec-1981',950,NULL,30);
+
+INSERT INTO EMP VALUES
+(7902,'FORD','ANALYST',7566,'3-dec-1981',3000,NULL,20);
+
+INSERT INTO EMP VALUES
+(7934,'MILLER','CLERK',7782,'23-jan-1982',1300,NULL,10);
+
+COMMIT;
+
+ROLL UP:- THE ROLL UP CLAUSE EXTENDS THE GROUP BY TO RETURN A ROW CONTAINING A SUBTOTAL FOR EACH GROUP ALONG WITH A TOTAL FOR ALL GROUPS.
+
+SELECT DEPTNO,JOB,SUM(SAL) FROM EMP GROUP BY ROLLUP(DEPTNO,JOB);
+
+SELECT DEPTNO,JOB,SUM(SAL) FROM EMP
+GROUP BY ROLLUP(JOB,DEPTNO);
+
+SELECT DEPTNO,JOB,AVG(SAL) FROM EMP
+GROUP BY ROLLUP(DEPTNO,JOB);
+
+SELECT DEPTNO,JOB,AVG(SAL) FROM EMP
+GROUP BY ROLLUP(JOB,DEPTNO);
+
+CUBE:- THE CUBE CLAUSE EXTENDS GROUP BY  CLAUSE TO RETURN ROWS CONTAINING A SUBTOTAL FOR ALL COMBINATIONS OF COLUMNS INCLUDED IN THE CUBE CLAUSE ALONG WITH A TOTAL AT THE END.
+
+SELECT DEPTNO,JOB,SUM(SAL) FROM EMP GROUP BY CUBE(DEPTNO,JOB);
+
+SELECT DEPTNO,JOB,SUM(SAL) FROM EMP
+GROUP BY CUBE(JOB,DEPTNO)
+
+GROUPING FUNCTION:-
+
+THE GROUPING FUNCTION ACCEPTS A COLUMN AND RETURNS 0 OR 1. GROUPING RETURNS 1 WHEN A COLUMN VALUE IS NULL AND RETURNS 0 WHEN THE COLUMN VALUE IS NOT NULL. GROUPING IS ONLY USED IN QUERIES THAT USE THE ROLLUP OR CUBE. GROUPING IS USEFUL  WHEN YOU WANT TO DISPLAY A VALUE WHEN A NULL WOULD OTHERWISE BE RETURNED.
+
+SELECT 
+DECODE(GROUPING(JOB),1,'TOTAL FOR ALL JOBS',JOB) JOB ,SUM(SAL) FROM EMP GROUP BY ROLLUP(JOB);
+
+rank and dense rank are used to calculate ranks. for example we wish to display ranks of the employees, ranks of a product etc.
+
+the basic syntax is:-
+
+rank() over (expr)
+dense_rank over (expr)
+
+Note:- the expression will be a column name
+
+lets say we have employees salary as below, we want to give ranks , but which rank should be given we can rank 1000 as - rank 1 or  5000 as - rank 1
+
+if in the expr part we give order by sal desc , then ranks are given in descending order example
+
+rank over (order by sal desc)
+
+5000	1
+4000	2
+3000	3
+2000	4
+1000	5
+
+Example for rank in desc order:-
+
+-- display the ename,sal and rank for all employees in desc order of sal
+
+select ename,sal,rank() over (order by sal desc) rnk from emp;
+
+if in the expr part we give order by sal asc , then ranks are given in ascending order example
+
+rank over (order by sal asc)
+
+1000	1
+2000	2
+3000	3
+4000	4
+5000	5
+
+Example for rank in asc order:-
+
+-- display the ename,sal and rank for all employees in asc order of sal
+
+select ename,sal,rank() over (order by sal asc) rnk from emp;
+
+the problem in rank function is that it genrates gaps.
+to over come this we have the dense_rank function, it will not generate gaps.
+
+-- display the ename,sal and rank for all employees in asc order of sal without gaps in the rank
+
+select ename,sal,dense_rank() over (order by sal asc) rnk from emp;
+
+partition by clause is used in rank and dense rank to divide the output into parts 
+
+Example for partition by clause with rank
+
+select ename,sal,deptno,rank() over (partition by deptno order by sal asc) rnk from emp;
+
+Example for partition by clause with dense_rank
+
+-- display the department wise ename,sal and rank for all employees in asc order of sal without gaps
+
+select ename,sal,deptno,dense_rank() over (partition by deptno order by sal asc) rnk from emp;

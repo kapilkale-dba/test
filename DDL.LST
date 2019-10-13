@@ -1,0 +1,903 @@
+SQL> CREATE USER DS IDENTIFIED BY TIGER;
+
+User created.
+
+SQL> CONNECT DS/TIGER
+ERROR:
+ORA-01045: user DS lacks CREATE SESSION privilege; logon denied 
+
+
+Warning: You are no longer connected to ORACLE.
+SQL> CONN / AS SYSDBA
+Connected.
+SQL> GRANT CREATE SESSION,CREATE TABLE,CREATE VIEW TO DS;
+
+Grant succeeded.
+
+SQL> GRANT UNLIMITED TABLESPACE TO DS;
+
+Grant succeeded.
+
+SQL> CONN DS/TIGER
+Connected.
+SQL> SHOW USER
+USER is "DS"
+SQL> SELECT * FROM TAB;
+
+no rows selected
+
+SQL> CREATE TABLE EMP
+  2  (EMPNO NUMBER(4),
+  3   ENAME VARCHAR2(10),
+  4   JOB   VARCHAR2(10),
+  5   HIREDATE DATE,
+  6   SAL   NUMBER(10,2),
+  7   COMM  NUMBER(10,2),
+  8   DEPTNO NUMBER(2));
+
+Table created.
+
+SQL> DESC EMP
+ Name                                                                                                              Null?    Type
+ ----------------------------------------------------------------------------------------------------------------- -------- ----------------------------------------------------------------------------
+ EMPNO                                                                                                                      NUMBER(4)
+ ENAME                                                                                                                      VARCHAR2(10)
+ JOB                                                                                                                        VARCHAR2(10)
+ HIREDATE                                                                                                                   DATE
+ SAL                                                                                                                        NUMBER(10,2)
+ COMM                                                                                                                       NUMBER(10,2)
+ DEPTNO                                                                                                                     NUMBER(2)
+
+SQL> CREATE TABLE SALGRADE
+  2  (GRADE NUMBER,
+  3   LOSAL NUMBER,
+  4   HISAL NUMBER DEFAULT 100000);
+
+Table created.
+
+SQL> CREATE TABLE DEPT
+  2  (DEPTNO NUMBER,
+  3   DNAME VARCHAR2(10),
+  4   LOC VARCHAR2(10),
+  5   CREATE_DATE DATE DEFAULT SYSDATE);
+
+Table created.
+
+SQL> SELECT * FROM TAB;
+
+TNAME                          TABTYPE  CLUSTERID                                                                                                                                                       
+------------------------------ ------- ----------                                                                                                                                                       
+DEPT                           TABLE                                                                                                                                                                    
+EMP                            TABLE                                                                                                                                                                    
+SALGRADE                       TABLE                                                                                                                                                                    
+
+SQL> -- NOT NULL CONSTRAINT
+SQL> -- WHEN APPLIED TO A COLUMN IT WILL NOT ALLOW ANY NULL VALUES TO BE INSERTED INTO THAT COLUMN
+SQL> CREATE TABLE DEPARTMENT (DEPTNO NUMBER(4) CONSTRAINT NN_DEPTNO NOT NULL,
+  2  DNAME VARCHAR2(10) CONSTRAINT NN_DNAME NOT NULL,
+  3  LOC VARCHAR2(10));
+
+Table created.
+
+SQL> -- IN ABOVE EXAMPLE THE CONSTRAINTS ARE DEFINED ALONG WITH THE COLUMNS THIS IS KNOWN AS COLUMN LEVEL CONSTRAINT
+SQL> 
+SQL> -- HOW TO SEE THE CONSTRAINTS THAT ARE DEFINED ON A TABLE
+SQL> 
+SQL> SELECT CONSTRAINT_NAME,CONSTRAINT_TYPE,STATUS FROM USER_CONSTRAINTS WHERE TABLE_NAME='DEPARTMENT';
+
+CONSTRAINT_NAME                C STATUS                                                                                                                                                                 
+------------------------------ - --------                                                                                                                                                               
+NN_DEPTNO                      C ENABLED                                                                                                                                                                
+NN_DNAME                       C ENABLED                                                                                                                                                                
+
+SQL> -- UNIQUE CONSTRAINT
+SQL> -- WHEN APPLIED TO A COLUMN IT WILL NOT ALLOW ANY DUPLICATE VALUES WITHIN THAT COLUMN
+SQL> 
+SQL> CREATE TABLE EMPLOYEES
+  2  (EMPNO NUMBER(4) CONSTRAINT UN_EMPNO UNIQUE CONSTRAINT NN_EMPNO NOT NULL,
+  3   ENAME VARCHAR2(10) CONSTRAINT CK_ENAME CHECK (ENAME=UPPER(ENAME)),
+  4   JOB VARCHAR2(10) CONSTRAINT CK_JOB CHECK (JOB IN ('CLERK','SALESMAN','MANAGER')),
+  5   HIREDATE DATE CONSTRAINT CK_HIREDATE CHECK (HIREDATE BETWEEN '01-JAN-1981' AND '31-DEC-2100'),
+  6   SAL NUMBER(10,2) CONSTRAINT CK_SAL CHECK (SAL BETWEEN 1500 AND 10000),
+  7   COMM NUMBER(10,2),
+  8   DEPTNO NUMBER(4),
+  9   CONSTRAINT CK_COMM_SAL CHECK (SAL>COMM));
+
+Table created.
+
+SQL> INSERT INTO EMPLOYEES VALUES (NULL,'smith','DBA','01-JAN-1979',100,500,10);
+INSERT INTO EMPLOYEES VALUES (NULL,'smith','DBA','01-JAN-1979',100,500,10)
+                              *
+ERROR at line 1:
+ORA-01400: cannot insert NULL into ("DS"."EMPLOYEES"."EMPNO") 
+
+
+SQL> INSERT INTO EMPLOYEES VALUES (1001,'smith','DBA','01-JAN-1979',100,500,10);
+INSERT INTO EMPLOYEES VALUES (1001,'smith','DBA','01-JAN-1979',100,500,10)
+*
+ERROR at line 1:
+ORA-02290: check constraint (DS.CK_COMM_SAL) violated 
+
+
+SQL> INSERT INTO EMPLOYEES VALUES (1001,'smith','DBA','01-JAN-1979',100,NULL,10);
+INSERT INTO EMPLOYEES VALUES (1001,'smith','DBA','01-JAN-1979',100,NULL,10)
+*
+ERROR at line 1:
+ORA-02290: check constraint (DS.CK_SAL) violated 
+
+
+SQL> INSERT INTO EMPLOYEES VALUES (1001,'smith','DBA','01-JAN-1979',1500,NULL,10);
+INSERT INTO EMPLOYEES VALUES (1001,'smith','DBA','01-JAN-1979',1500,NULL,10)
+*
+ERROR at line 1:
+ORA-02290: check constraint (DS.CK_HIREDATE) violated 
+
+
+SQL> INSERT INTO EMPLOYEES VALUES (1001,'smith','DBA','01-JAN-1980',1500,NULL,10);
+INSERT INTO EMPLOYEES VALUES (1001,'smith','DBA','01-JAN-1980',1500,NULL,10)
+*
+ERROR at line 1:
+ORA-02290: check constraint (DS.CK_HIREDATE) violated 
+
+
+SQL> INSERT INTO EMPLOYEES VALUES (1001,'smith','DBA','01-JAN-1981',1500,NULL,10);
+INSERT INTO EMPLOYEES VALUES (1001,'smith','DBA','01-JAN-1981',1500,NULL,10)
+*
+ERROR at line 1:
+ORA-02290: check constraint (DS.CK_JOB) violated 
+
+
+SQL> INSERT INTO EMPLOYEES VALUES (1001,'smith','MANAGER','01-JAN-1981',1500,NULL,10);
+INSERT INTO EMPLOYEES VALUES (1001,'smith','MANAGER','01-JAN-1981',1500,NULL,10)
+*
+ERROR at line 1:
+ORA-02290: check constraint (DS.CK_ENAME) violated 
+
+
+SQL> INSERT INTO EMPLOYEES VALUES (1001,'SMITH','MANAGER','01-JAN-1981',1500,NULL,10);
+
+1 row created.
+
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> SELECT * FROM EMPLOYEES;
+
+     EMPNO ENAME      JOB        HIREDATE         SAL       COMM     DEPTNO                                                                                                                             
+---------- ---------- ---------- --------- ---------- ---------- ----------                                                                                                                             
+      1001 SMITH      MANAGER    01-JAN-81       1500                    10                                                                                                                             
+
+SQL> INSERT INTO EMPLOYEES VALUES (1001,'SMITH','MANAGER','01-JAN-1981',1500,NULL,10);
+INSERT INTO EMPLOYEES VALUES (1001,'SMITH','MANAGER','01-JAN-1981',1500,NULL,10)
+*
+ERROR at line 1:
+ORA-00001: unique constraint (DS.UN_EMPNO) violated 
+
+
+SQL> INSERT INTO EMPLOYEES VALUES (1002,'SMITH','MANAGER','01-JAN-1981',1500,NULL,10);
+
+1 row created.
+
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> SELECT * FROM EMPLOYEES;
+
+     EMPNO ENAME      JOB        HIREDATE         SAL       COMM     DEPTNO                                                                                                                             
+---------- ---------- ---------- --------- ---------- ---------- ----------                                                                                                                             
+      1001 SMITH      MANAGER    01-JAN-81       1500                    10                                                                                                                             
+      1002 SMITH      MANAGER    01-JAN-81       1500                    10                                                                                                                             
+
+SQL> -- PRIMARY KEY CONSTRAINT
+SQL> -- WHEN APPLIED TO A TABLES COLUMN THEN
+SQL> -- 1. THE COLUMN WILL BE NOT NULL
+SQL> -- 2. THE COLUMN WILL BE UNIQUE
+SQL> -- 3. THE COLUMN WILL ALLOW ITS DATA TO BE REFERENCED IN ANOTHER TABLES COLUMN
+SQL> -- NOTE:- EVEN UNIQUE CONSTRAINT WILL ALLOW ITS DATA TO BE REFERENCED IN ANOTHER TABLES COLUMN
+SQL> 
+SQL> DROP TABLE DEPT;
+
+Table dropped.
+
+SQL> DROP TABLE EMP;
+
+Table dropped.
+
+SQL> SELECT * FROM TAB;
+
+TNAME                          TABTYPE  CLUSTERID                                                                                                                                                       
+------------------------------ ------- ----------                                                                                                                                                       
+DEPARTMENT                     TABLE                                                                                                                                                                    
+EMPLOYEES                      TABLE                                                                                                                                                                    
+SALGRADE                       TABLE                                                                                                                                                                    
+
+SQL> DESC USER_RECYCLEBIN
+ Name                                                                                                              Null?    Type
+ ----------------------------------------------------------------------------------------------------------------- -------- ----------------------------------------------------------------------------
+ OBJECT_NAME                                                                                                       NOT NULL VARCHAR2(30)
+ ORIGINAL_NAME                                                                                                              VARCHAR2(32)
+ OPERATION                                                                                                                  VARCHAR2(9)
+ TYPE                                                                                                                       VARCHAR2(25)
+ TS_NAME                                                                                                                    VARCHAR2(30)
+ CREATETIME                                                                                                                 VARCHAR2(19)
+ DROPTIME                                                                                                                   VARCHAR2(19)
+ DROPSCN                                                                                                                    NUMBER
+ PARTITION_NAME                                                                                                             VARCHAR2(32)
+ CAN_UNDROP                                                                                                                 VARCHAR2(3)
+ CAN_PURGE                                                                                                                  VARCHAR2(3)
+ RELATED                                                                                                           NOT NULL NUMBER
+ BASE_OBJECT                                                                                                       NOT NULL NUMBER
+ PURGE_OBJECT                                                                                                      NOT NULL NUMBER
+ SPACE                                                                                                                      NUMBER
+
+SQL> SELECT OBJECT_NAME,ORIGINAL_NAME FROM USER_RECYCLEBIN;
+
+no rows selected
+
+SQL> FLASHBACK TABLE DEPT TO BEFORE DROP;
+FLASHBACK TABLE DEPT TO BEFORE DROP
+*
+ERROR at line 1:
+ORA-38305: object not in RECYCLE BIN 
+
+
+SQL> CREATE TABLE DEPT (DEPTNO NUMBER(4) CONSTRAINT PK_DEPTNO PRIMARY KEY,
+  2  DNAME VARCHAR2(10),
+  3  LOC VARCHAR2(10));
+
+Table created.
+
+SQL> SELECT CONSTRAINT_NAME,CONSTRAINT_TYPE,STATUS FROM USER_CONSTRAINTS WHERE TABLE_NAME='DEPT';
+
+CONSTRAINT_NAME                C STATUS                                                                                                                                                                 
+------------------------------ - --------                                                                                                                                                               
+PK_DEPTNO                      P ENABLED                                                                                                                                                                
+
+SQL> DESC DEPT
+ Name                                                                                                              Null?    Type
+ ----------------------------------------------------------------------------------------------------------------- -------- ----------------------------------------------------------------------------
+ DEPTNO                                                                                                            NOT NULL NUMBER(4)
+ DNAME                                                                                                                      VARCHAR2(10)
+ LOC                                                                                                                        VARCHAR2(10)
+
+SQL> -- FOREIGN KEY
+SQL> -- 1. WHEN APPLIED TO A TABLE IT WILL REFERENCE ITS VALUES FROM A PRIMARY KEY OR UNIQUE KEY COLUMN IN SAME TABLE OR ANOTHER TABLE
+SQL> -- 2. IT WILL ALLOW NULL VALUES
+SQL> -- 3. IT WILL ALLOW DUPLICATE VALUES
+SQL> CREATE TABLE EMP
+  2  (EMPNO NUMBER(4) CONSTRAINT PK_EMPNO PRIMARY KEY,
+  3   ENAME VARCHAR2(10),
+  4   JOB VARCHAR2(10),
+  5   HIREDATE DATE,
+  6   SAL NUMBER(10,2),
+  7   DEPTNO NUMBER(4) CONSTRAINT FK_DEPTNO REFERENCES DEPT (DEPTNO));
+
+Table created.
+
+SQL> INSERT INTO DEPT VALUES (10,'ACCOUNTING','NEW YORK');
+
+1 row created.
+
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> INSERT INTO EMP VALUES (1001,'HARI','DBA',SYSDATE,1000,20);
+INSERT INTO EMP VALUES (1001,'HARI','DBA',SYSDATE,1000,20)
+*
+ERROR at line 1:
+ORA-02291: integrity constraint (DS.FK_DEPTNO) violated - parent key not found 
+
+
+SQL> INSERT INTO EMP VALUES (1001,'HARI','DBA',SYSDATE,1000,10);
+
+1 row created.
+
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> SELECT * FROM DEPT;
+
+    DEPTNO DNAME      LOC                                                                                                                                                                               
+---------- ---------- ----------                                                                                                                                                                        
+        10 ACCOUNTING NEW YORK                                                                                                                                                                          
+
+SQL> SELECT * FROM EMP;
+
+     EMPNO ENAME      JOB        HIREDATE         SAL     DEPTNO                                                                                                                                        
+---------- ---------- ---------- --------- ---------- ----------                                                                                                                                        
+      1001 HARI       DBA        30-AUG-19       1000         10                                                                                                                                        
+
+SQL> INSERT INTO EMP VALUES (1002,'RAVI','SALESMAN',SYSDATE,2000,10);
+
+1 row created.
+
+SQL> COMMIT
+  2  ;
+
+Commit complete.
+
+SQL> SELECT * FROM EMP;
+
+     EMPNO ENAME      JOB        HIREDATE         SAL     DEPTNO                                                                                                                                        
+---------- ---------- ---------- --------- ---------- ----------                                                                                                                                        
+      1001 HARI       DBA        30-AUG-19       1000         10                                                                                                                                        
+      1002 RAVI       SALESMAN   30-AUG-19       2000         10                                                                                                                                        
+
+SQL> INSERT INTO EMP VALUES (1002,'HARIBABU','MANAGER',SYSDATE,2000,NULL);
+INSERT INTO EMP VALUES (1002,'HARIBABU','MANAGER',SYSDATE,2000,NULL)
+*
+ERROR at line 1:
+ORA-00001: unique constraint (DS.PK_EMPNO) violated 
+
+
+SQL> INSERT INTO EMP VALUES (1003,'HARIBABU','MANAGER',SYSDATE,2000,NULL);
+
+1 row created.
+
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> SELECT * FROM EMP;
+
+     EMPNO ENAME      JOB        HIREDATE         SAL     DEPTNO                                                                                                                                        
+---------- ---------- ---------- --------- ---------- ----------                                                                                                                                        
+      1001 HARI       DBA        30-AUG-19       1000         10                                                                                                                                        
+      1002 RAVI       SALESMAN   30-AUG-19       2000         10                                                                                                                                        
+      1003 HARIBABU   MANAGER    30-AUG-19       2000                                                                                                                                                   
+
+SQL> DROP TABLE DEPT;
+DROP TABLE DEPT
+           *
+ERROR at line 1:
+ORA-02449: unique/primary keys in table referenced by foreign keys 
+
+
+SQL> DELETE DEPT WHERE DEPTNO=10;
+DELETE DEPT WHERE DEPTNO=10
+*
+ERROR at line 1:
+ORA-02292: integrity constraint (DS.FK_DEPTNO) violated - child record found 
+
+
+SQL> CREATE TABLE EMP1 (EMPNO NUMBER,ENAME VARCHAR2(10),HIREDATE DATE, CONSTRAINT PK_EMP1 PRIMARY KEY (EMPNO,ENAME));
+
+Table created.
+
+SQL> INSERT INTO EMP1 VALUES (1001,'KAPIL',SYSDATE);
+
+1 row created.
+
+SQL> INSERT INTO EMP1 VALUES (1001,'RAVI',SYSDATE);
+
+1 row created.
+
+SQL> INSERT INTO EMP1 VALUES (1001,'KAPIL',SYSDATE);
+INSERT INTO EMP1 VALUES (1001,'KAPIL',SYSDATE)
+*
+ERROR at line 1:
+ORA-00001: unique constraint (DS.PK_EMP1) violated 
+
+
+SQL> -- ON DELETE CASCADE
+SQL> -- IF THIS CLAUSE IS SPECFIED IN THE FOREIGN KEY CONSTRAINT THEN IF WE DELETE A PRIMARY KEY VALUE ALL RELATED FOREIGN KEY RECORDS WILL
+SQL> -- ALSO BE DELETE
+SQL> DROP TABLE EMP;
+
+Table dropped.
+
+SQL> CREATE TABLE EMP (EMPNO NUMBER(4) CONSTRAINT PK_EMPNO PRIMARY KEY,
+  2                    ENAME VARCHAR2(10),
+  3                    HIREDATE DATE,
+  4                    SAL NUMBER(7,2),
+  5                    DEPTNO NUMBER(4) CONSTRAINT FK_DEPTNO REFERENCES DEPT (DEPTNO) ON DELETE CASCADE);
+
+Table created.
+
+SQL> INSERT INTO EMP1 VALUES (1001,'RAVI',SYSDATE);
+INSERT INTO EMP1 VALUES (1001,'RAVI',SYSDATE)
+*
+ERROR at line 1:
+ORA-00001: unique constraint (DS.PK_EMP1) violated 
+
+
+SQL> INSERT INTO EMP VALUES (1002,'HARIBABU','MANAGER',SYSDATE,2000,10);
+INSERT INTO EMP VALUES (1002,'HARIBABU','MANAGER',SYSDATE,2000,10)
+            *
+ERROR at line 1:
+ORA-00913: too many values 
+
+
+SQL> INSERT INTO EMP VALUES (1002,'HARIBABU',SYSDATE,2000,10);
+
+1 row created.
+
+SQL> INSERT INTO EMP VALUES (1001,'HARIBABU',SYSDATE,2000,10);
+
+1 row created.
+
+SQL> INSERT INTO EMP VALUES (1003,'HARIBABU',SYSDATE,2000,10);
+
+1 row created.
+
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> SELECT * FROM DEPT;
+
+    DEPTNO DNAME      LOC                                                                                                                                                                               
+---------- ---------- ----------                                                                                                                                                                        
+        10 ACCOUNTING NEW YORK                                                                                                                                                                          
+
+SQL> SELECT * FROM EMP;
+
+     EMPNO ENAME      HIREDATE         SAL     DEPTNO                                                                                                                                                   
+---------- ---------- --------- ---------- ----------                                                                                                                                                   
+      1002 HARIBABU   30-AUG-19       2000         10                                                                                                                                                   
+      1001 HARIBABU   30-AUG-19       2000         10                                                                                                                                                   
+      1003 HARIBABU   30-AUG-19       2000         10                                                                                                                                                   
+
+SQL> DELETE DEPT;
+
+1 row deleted.
+
+SQL> SELECT * FROM EMP;
+
+no rows selected
+
+SQL> ROLL
+Rollback complete.
+SQL> SELECT * FROM EMP;
+
+     EMPNO ENAME      HIREDATE         SAL     DEPTNO                                                                                                                                                   
+---------- ---------- --------- ---------- ----------                                                                                                                                                   
+      1002 HARIBABU   30-AUG-19       2000         10                                                                                                                                                   
+      1001 HARIBABU   30-AUG-19       2000         10                                                                                                                                                   
+      1003 HARIBABU   30-AUG-19       2000         10                                                                                                                                                   
+
+SQL> SELECT * FROM DEPT;
+
+    DEPTNO DNAME      LOC                                                                                                                                                                               
+---------- ---------- ----------                                                                                                                                                                        
+        10 ACCOUNTING NEW YORK                                                                                                                                                                          
+
+SQL> DROP TABLE EMP;
+
+Table dropped.
+
+SQL> CREATE TABLE EMP (EMPNO NUMBER(4) CONSTRAINT PK_EMPNO PRIMARY KEY,
+  2    ENAME VARCHAR2(10),
+  3    HIREDATE DATE,
+  4    SAL NUMBER(7,2),
+  5    DEPTNO NUMBER(4) CONSTRAINT FK_DEPTNO REFERENCES DEPT (DEPTNO) ON DELETE SET NULL);
+
+Table created.
+
+SQL> INSERT INTO EMP VALUES (1002,'HARIBABU',SYSDATE,2000,10);
+
+1 row created.
+
+SQL> INSERT INTO EMP VALUES (1001,'HARIBABU',SYSDATE,2000,10);
+
+1 row created.
+
+SQL> INSERT INTO EMP VALUES (1003,'HARIBABU',SYSDATE,2000,10);
+
+1 row created.
+
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> SELECT * FROM DEPT;
+
+    DEPTNO DNAME      LOC                                                                                                                                                                               
+---------- ---------- ----------                                                                                                                                                                        
+        10 ACCOUNTING NEW YORK                                                                                                                                                                          
+
+SQL> SELECT * FROM EMP;
+
+     EMPNO ENAME      HIREDATE         SAL     DEPTNO                                                                                                                                                   
+---------- ---------- --------- ---------- ----------                                                                                                                                                   
+      1002 HARIBABU   30-AUG-19       2000         10                                                                                                                                                   
+      1001 HARIBABU   30-AUG-19       2000         10                                                                                                                                                   
+      1003 HARIBABU   30-AUG-19       2000         10                                                                                                                                                   
+
+SQL> DELETE DEPT WHERE DEPTNO=10;
+
+1 row deleted.
+
+SQL> SELECT * FROM EMP;
+
+     EMPNO ENAME      HIREDATE         SAL     DEPTNO                                                                                                                                                   
+---------- ---------- --------- ---------- ----------                                                                                                                                                   
+      1002 HARIBABU   30-AUG-19       2000                                                                                                                                                              
+      1001 HARIBABU   30-AUG-19       2000                                                                                                                                                              
+      1003 HARIBABU   30-AUG-19       2000                                                                                                                                                              
+
+SQL> ROLL
+Rollback complete.
+SQL> -- ALTER TABLE OPTIONS
+SQL> 
+SQL> -- ADD A COLUMN
+SQL> DESC DEPT
+ Name                                                                                                              Null?    Type
+ ----------------------------------------------------------------------------------------------------------------- -------- ----------------------------------------------------------------------------
+ DEPTNO                                                                                                            NOT NULL NUMBER(4)
+ DNAME                                                                                                                      VARCHAR2(10)
+ LOC                                                                                                                        VARCHAR2(10)
+
+SQL> ALTER TABLE DEPT ADD CREATION_DATE DATE;
+
+Table altered.
+
+SQL> DESC DEPT
+ Name                                                                                                              Null?    Type
+ ----------------------------------------------------------------------------------------------------------------- -------- ----------------------------------------------------------------------------
+ DEPTNO                                                                                                            NOT NULL NUMBER(4)
+ DNAME                                                                                                                      VARCHAR2(10)
+ LOC                                                                                                                        VARCHAR2(10)
+ CREATION_DATE                                                                                                              DATE
+
+SQL> SELECT * FROM DEPT;
+
+    DEPTNO DNAME      LOC        CREATION_                                                                                                                                                              
+---------- ---------- ---------- ---------                                                                                                                                                              
+        10 ACCOUNTING NEW YORK                                                                                                                                                                          
+
+SQL> -- DROP A COLUMN
+SQL> 
+SQL> ALTER TABLE DEPT DROP COLUMN CREATION_DATE;
+
+Table altered.
+
+SQL> DESC DEPT
+ Name                                                                                                              Null?    Type
+ ----------------------------------------------------------------------------------------------------------------- -------- ----------------------------------------------------------------------------
+ DEPTNO                                                                                                            NOT NULL NUMBER(4)
+ DNAME                                                                                                                      VARCHAR2(10)
+ LOC                                                                                                                        VARCHAR2(10)
+
+SQL> ALTER TABLE DEPT ADD CREATION_DATE DATE DEFAULT SYSDATE;
+
+Table altered.
+
+SQL> SELECT * FROM DEPT;
+
+    DEPTNO DNAME      LOC        CREATION_                                                                                                                                                              
+---------- ---------- ---------- ---------                                                                                                                                                              
+        10 ACCOUNTING NEW YORK   30-AUG-19                                                                                                                                                              
+
+SQL> ALTER TABLE DEPT DROP CREATION_DATE;
+ALTER TABLE DEPT DROP CREATION_DATE
+                      *
+ERROR at line 1:
+ORA-00905: missing keyword 
+
+
+SQL> ALTER TABLE DEPT DROP COLUMN (CREATION_DATE,LOC);
+ALTER TABLE DEPT DROP COLUMN (CREATION_DATE,LOC)
+                             *
+ERROR at line 1:
+ORA-00904: : invalid identifier 
+
+
+SQL> -- ADDING MULTIPLE COLUMNS
+SQL> ALTER TABLE DEPT ADD COLUMN (CREATION_DATE DATE DEFAULT SYSDATE,DESCRIPTION_OF_DEPT CLOB);
+ALTER TABLE DEPT ADD COLUMN (CREATION_DATE DATE DEFAULT SYSDATE,DESCRIPTION_OF_DEPT CLOB)
+                     *
+ERROR at line 1:
+ORA-00904: : invalid identifier 
+
+
+SQL> ALTER TABLE DEPT ADD (CREATION_DATE DATE DEFAULT SYSDATE,DESCRIPTION_OF_DEPT CLOB);
+ALTER TABLE DEPT ADD (CREATION_DATE DATE DEFAULT SYSDATE,DESCRIPTION_OF_DEPT CLOB)
+                      *
+ERROR at line 1:
+ORA-01430: column being added already exists in table 
+
+
+SQL> ALTER TABLE DEPT ADD (CREATION_DATE1 DATE DEFAULT SYSDATE,DESCRIPTION_OF_DEPT CLOB);
+
+Table altered.
+
+SQL> -- RENAME A COLUMN
+SQL> 
+SQL> ALTER TABLE DEPT RENAME COLUMN DESCRIPTION_OF_DEPT TO DEPT_DESC;
+
+Table altered.
+
+SQL> DESC DEPT
+ Name                                                                                                              Null?    Type
+ ----------------------------------------------------------------------------------------------------------------- -------- ----------------------------------------------------------------------------
+ DEPTNO                                                                                                            NOT NULL NUMBER(4)
+ DNAME                                                                                                                      VARCHAR2(10)
+ LOC                                                                                                                        VARCHAR2(10)
+ CREATION_DATE                                                                                                              DATE
+ CREATION_DATE1                                                                                                             DATE
+ DEPT_DESC                                                                                                                  CLOB
+
+SQL> -- CHANGE DATA TYPE OF COLUMN
+SQL> 
+SQL> ALTER TABLE DEPT MODIFY DNAME CHAR(10);
+
+Table altered.
+
+SQL> DESC DEPT
+ Name                                                                                                              Null?    Type
+ ----------------------------------------------------------------------------------------------------------------- -------- ----------------------------------------------------------------------------
+ DEPTNO                                                                                                            NOT NULL NUMBER(4)
+ DNAME                                                                                                                      CHAR(10)
+ LOC                                                                                                                        VARCHAR2(10)
+ CREATION_DATE                                                                                                              DATE
+ CREATION_DATE1                                                                                                             DATE
+ DEPT_DESC                                                                                                                  CLOB
+
+SQL> ALTER TABLE DEPT READ ONLY;
+
+Table altered.
+
+SQL> ALTER TABLE DEPT READ WRITE;
+
+Table altered.
+
+SQL> -- INSERT METHOD 1
+SQL> 
+SQL> INSERT INTO DEPT (DEPTNO,DNAME,LOC) VALUES (1,'RES','HYD');
+
+1 row created.
+
+SQL> SELECT * FROM DEPT;
+
+    DEPTNO DNAME      LOC        CREATION_ CREATION_ DEPT_DESC                                                                                                                                          
+---------- ---------- ---------- --------- --------- --------------------------------------------------------------------------------                                                                   
+        10 ACCOUNTING NEW YORK   30-AUG-19 30-AUG-19                                                                                                                                                    
+         1 RES        HYD        30-AUG-19 30-AUG-19                                                                                                                                                    
+
+SQL> -- INSERT METHOD 2
+SQL> 
+SQL> INSERT INTO DEPT VALUES (2,'FIN','HYD','01-JAN-2001','01-JUN-2003','THIS IS A FIN DEPT');
+
+1 row created.
+
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> SELECT * FROM DEPT;
+
+    DEPTNO DNAME      LOC        CREATION_ CREATION_ DEPT_DESC                                                                                                                                          
+---------- ---------- ---------- --------- --------- --------------------------------------------------------------------------------                                                                   
+        10 ACCOUNTING NEW YORK   30-AUG-19 30-AUG-19                                                                                                                                                    
+         1 RES        HYD        30-AUG-19 30-AUG-19                                                                                                                                                    
+         2 FIN        HYD        01-JAN-01 01-JUN-03 THIS IS A FIN DEPT                                                                                                                                 
+
+SQL> -- INSERT METHOD 3
+SQL> INSERT INTO DEPT VALUES ('&DEPTNO','&DNAME','&LOC','&C_D1','&C_D2','&DESCRIPTION_DEPT');
+Enter value for deptno: 3
+Enter value for dname: SALES
+Enter value for loc: MUMBAI
+Enter value for c_d1: 01-JUN-04
+Enter value for c_d2: 
+Enter value for description_dept: 
+old   1: INSERT INTO DEPT VALUES ('&DEPTNO','&DNAME','&LOC','&C_D1','&C_D2','&DESCRIPTION_DEPT')
+new   1: INSERT INTO DEPT VALUES ('3','SALES','MUMBAI','01-JUN-04','','')
+
+1 row created.
+
+SQL> /
+Enter value for deptno: 4
+Enter value for dname: HR
+Enter value for loc: HYD
+Enter value for c_d1: 
+Enter value for c_d2: 
+Enter value for description_dept: 
+old   1: INSERT INTO DEPT VALUES ('&DEPTNO','&DNAME','&LOC','&C_D1','&C_D2','&DESCRIPTION_DEPT')
+new   1: INSERT INTO DEPT VALUES ('4','HR','HYD','','','')
+
+1 row created.
+
+SQL> SELECT * FROM DEPT;
+
+    DEPTNO DNAME      LOC        CREATION_ CREATION_ DEPT_DESC                                                                                                                                          
+---------- ---------- ---------- --------- --------- --------------------------------------------------------------------------------                                                                   
+        10 ACCOUNTING NEW YORK   30-AUG-19 30-AUG-19                                                                                                                                                    
+         1 RES        HYD        30-AUG-19 30-AUG-19                                                                                                                                                    
+         2 FIN        HYD        01-JAN-01 01-JUN-03 THIS IS A FIN DEPT                                                                                                                                 
+         3 SALES      MUMBAI     01-JUN-04                                                                                                                                                              
+         4 HR         HYD                                                                                                                                                                               
+
+SQL> -- CREATE A DUPLICATE TABLE
+SQL> 
+SQL> CREATE TABLE DEPT_DUP AS SELECT * FROM DEPT;
+
+Table created.
+
+SQL> SELECT * FROM DEPT_DUP;
+
+    DEPTNO DNAME      LOC        CREATION_ CREATION_ DEPT_DESC                                                                                                                                          
+---------- ---------- ---------- --------- --------- --------------------------------------------------------------------------------                                                                   
+        10 ACCOUNTING NEW YORK   30-AUG-19 30-AUG-19                                                                                                                                                    
+         1 RES        HYD        30-AUG-19 30-AUG-19                                                                                                                                                    
+         2 FIN        HYD        01-JAN-01 01-JUN-03 THIS IS A FIN DEPT                                                                                                                                 
+         3 SALES      MUMBAI     01-JUN-04                                                                                                                                                              
+         4 HR         HYD                                                                                                                                                                               
+
+SQL> CREATE TABLE DEPARTMENTS1 AS SELECT * FROM DEPARTMENTS WHERE 1=2;
+CREATE TABLE DEPARTMENTS1 AS SELECT * FROM DEPARTMENTS WHERE 1=2
+                                           *
+ERROR at line 1:
+ORA-00942: table or view does not exist 
+
+
+SQL> CREATE TABLE DEPARTMENTS1 AS SELECT * FROM DEPT WHERE 1=2;
+
+Table created.
+
+SQL> DESC DEPARTMENTS1
+ Name                                                                                                              Null?    Type
+ ----------------------------------------------------------------------------------------------------------------- -------- ----------------------------------------------------------------------------
+ DEPTNO                                                                                                                     NUMBER(4)
+ DNAME                                                                                                                      CHAR(10)
+ LOC                                                                                                                        VARCHAR2(10)
+ CREATION_DATE                                                                                                              DATE
+ CREATION_DATE1                                                                                                             DATE
+ DEPT_DESC                                                                                                                  CLOB
+
+SQL> SELECT * FROM DEPARTMENTS;
+SELECT * FROM DEPARTMENTS
+              *
+ERROR at line 1:
+ORA-00942: table or view does not exist 
+
+
+SQL> SELECT * FROM DEPARTMENTS1;
+
+no rows selected
+
+SQL> -- INSERT METHOD 3
+SQL> 
+SQL> INSERT INTO DEPARTMENTS1 SELECT * FROM DEPT;
+
+5 rows created.
+
+SQL> SELECT * FROM DEPARTMENTS1;
+
+    DEPTNO DNAME      LOC        CREATION_ CREATION_ DEPT_DESC                                                                                                                                          
+---------- ---------- ---------- --------- --------- --------------------------------------------------------------------------------                                                                   
+        10 ACCOUNTING NEW YORK   30-AUG-19 30-AUG-19                                                                                                                                                    
+         1 RES        HYD        30-AUG-19 30-AUG-19                                                                                                                                                    
+         2 FIN        HYD        01-JAN-01 01-JUN-03 THIS IS A FIN DEPT                                                                                                                                 
+         3 SALES      MUMBAI     01-JUN-04                                                                                                                                                              
+         4 HR         HYD                                                                                                                                                                               
+
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> -- DELETE
+SQL> 
+SQL> DELETE DEPARTMENTS1 WHERE DEPTNO=4;
+
+1 row deleted.
+
+SQL> SELECT * FROM DEPARTMENTS1;
+
+    DEPTNO DNAME      LOC        CREATION_ CREATION_ DEPT_DESC                                                                                                                                          
+---------- ---------- ---------- --------- --------- --------------------------------------------------------------------------------                                                                   
+        10 ACCOUNTING NEW YORK   30-AUG-19 30-AUG-19                                                                                                                                                    
+         1 RES        HYD        30-AUG-19 30-AUG-19                                                                                                                                                    
+         2 FIN        HYD        01-JAN-01 01-JUN-03 THIS IS A FIN DEPT                                                                                                                                 
+         3 SALES      MUMBAI     01-JUN-04                                                                                                                                                              
+
+SQL> ROLL
+Rollback complete.
+SQL> SELECT * FROM DEPARTMENTS1;
+
+    DEPTNO DNAME      LOC        CREATION_ CREATION_ DEPT_DESC                                                                                                                                          
+---------- ---------- ---------- --------- --------- --------------------------------------------------------------------------------                                                                   
+        10 ACCOUNTING NEW YORK   30-AUG-19 30-AUG-19                                                                                                                                                    
+         1 RES        HYD        30-AUG-19 30-AUG-19                                                                                                                                                    
+         2 FIN        HYD        01-JAN-01 01-JUN-03 THIS IS A FIN DEPT                                                                                                                                 
+         3 SALES      MUMBAI     01-JUN-04                                                                                                                                                              
+         4 HR         HYD                                                                                                                                                                               
+
+SQL> DELETE DEPARTMENTS1;
+
+5 rows deleted.
+
+SQL> SELECT * FROM DEPARTMENTS1;
+
+no rows selected
+
+SQL> ROLL
+Rollback complete.
+SQL> SELECT * FROM DEPARTMENTS1;
+
+    DEPTNO DNAME      LOC        CREATION_ CREATION_ DEPT_DESC                                                                                                                                          
+---------- ---------- ---------- --------- --------- --------------------------------------------------------------------------------                                                                   
+        10 ACCOUNTING NEW YORK   30-AUG-19 30-AUG-19                                                                                                                                                    
+         1 RES        HYD        30-AUG-19 30-AUG-19                                                                                                                                                    
+         2 FIN        HYD        01-JAN-01 01-JUN-03 THIS IS A FIN DEPT                                                                                                                                 
+         3 SALES      MUMBAI     01-JUN-04                                                                                                                                                              
+         4 HR         HYD                                                                                                                                                                               
+
+SQL> -- UPDATE
+SQL> 
+SQL> UPDATE DEPARTMENTS1 SET LOC='BLORE' WHERE LOC='NEW YORK';
+
+1 row updated.
+
+SQL> SELECT * FROM DEPARTMENTS1;
+
+    DEPTNO DNAME      LOC        CREATION_ CREATION_ DEPT_DESC                                                                                                                                          
+---------- ---------- ---------- --------- --------- --------------------------------------------------------------------------------                                                                   
+        10 ACCOUNTING BLORE      30-AUG-19 30-AUG-19                                                                                                                                                    
+         1 RES        HYD        30-AUG-19 30-AUG-19                                                                                                                                                    
+         2 FIN        HYD        01-JAN-01 01-JUN-03 THIS IS A FIN DEPT                                                                                                                                 
+         3 SALES      MUMBAI     01-JUN-04                                                                                                                                                              
+         4 HR         HYD                                                                                                                                                                               
+
+SQL> ROLL
+Rollback complete.
+SQL> SELECT * FROM DEPARTMENTS1;
+
+    DEPTNO DNAME      LOC        CREATION_ CREATION_ DEPT_DESC                                                                                                                                          
+---------- ---------- ---------- --------- --------- --------------------------------------------------------------------------------                                                                   
+        10 ACCOUNTING NEW YORK   30-AUG-19 30-AUG-19                                                                                                                                                    
+         1 RES        HYD        30-AUG-19 30-AUG-19                                                                                                                                                    
+         2 FIN        HYD        01-JAN-01 01-JUN-03 THIS IS A FIN DEPT                                                                                                                                 
+         3 SALES      MUMBAI     01-JUN-04                                                                                                                                                              
+         4 HR         HYD                                                                                                                                                                               
+
+SQL> UPDATE DEPARTMENTS1 SET LOC='BLORE' WHERE LOC='NEW YORK';
+
+1 row updated.
+
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> SELECT * FROM DEPARTMENTS1;
+
+    DEPTNO DNAME      LOC        CREATION_ CREATION_ DEPT_DESC                                                                                                                                          
+---------- ---------- ---------- --------- --------- --------------------------------------------------------------------------------                                                                   
+        10 ACCOUNTING BLORE      30-AUG-19 30-AUG-19                                                                                                                                                    
+         1 RES        HYD        30-AUG-19 30-AUG-19                                                                                                                                                    
+         2 FIN        HYD        01-JAN-01 01-JUN-03 THIS IS A FIN DEPT                                                                                                                                 
+         3 SALES      MUMBAI     01-JUN-04                                                                                                                                                              
+         4 HR         HYD                                                                                                                                                                               
+
+SQL> UPDATE DEPARTMENTS1 SET LOC=NULL;
+
+5 rows updated.
+
+SQL> SELECT * FROM DEPARTMENTS1;
+
+    DEPTNO DNAME      LOC        CREATION_ CREATION_ DEPT_DESC                                                                                                                                          
+---------- ---------- ---------- --------- --------- --------------------------------------------------------------------------------                                                                   
+        10 ACCOUNTING            30-AUG-19 30-AUG-19                                                                                                                                                    
+         1 RES                   30-AUG-19 30-AUG-19                                                                                                                                                    
+         2 FIN                   01-JAN-01 01-JUN-03 THIS IS A FIN DEPT                                                                                                                                 
+         3 SALES                 01-JUN-04                                                                                                                                                              
+         4 HR                                                                                                                                                                                           
+
+SQL> 
+SQL> ROLL
+Rollback complete.
+SQL> SELECT * FROM DEPARTMENTS1;
+
+    DEPTNO DNAME      LOC        CREATION_ CREATION_ DEPT_DESC                                                                                                                                          
+---------- ---------- ---------- --------- --------- --------------------------------------------------------------------------------                                                                   
+        10 ACCOUNTING BLORE      30-AUG-19 30-AUG-19                                                                                                                                                    
+         1 RES        HYD        30-AUG-19 30-AUG-19                                                                                                                                                    
+         2 FIN        HYD        01-JAN-01 01-JUN-03 THIS IS A FIN DEPT                                                                                                                                 
+         3 SALES      MUMBAI     01-JUN-04                                                                                                                                                              
+         4 HR         HYD                                                                                                                                                                               
+
+SQL> SPOOL OFF
